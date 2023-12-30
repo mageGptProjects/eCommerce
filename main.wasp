@@ -1,0 +1,174 @@
+app SimsWear {
+  wasp: {
+    version: "^0.11.4"
+  },
+  title: "SimsWear",
+  client: {
+    rootComponent: import { Layout } from "@client/Layout.jsx",
+  },
+  db: {
+    prisma: {
+      clientPreviewFeatures: ["extendedWhereUnique"]
+    }
+  },
+  auth: {
+    userEntity: User,
+    methods: {
+      usernameAndPassword: {}
+    },
+    onAuthFailedRedirectTo: "/login",
+    onAuthSucceededRedirectTo: "/"
+  },
+  routes: [
+    { path: "/login", to: LoginPage },
+    { path: "/signup", to: SignupPage }
+  ],
+  pages: [
+    { component: import Login from "@client/pages/auth/Login.jsx", route: LoginPage },
+    { component: import Signup from "@client/pages/auth/Signup.jsx", route: SignupPage }
+  ],
+  entities: [
+    {
+      name: "User",
+      fields: [
+        { name: "id", type: "Int", attributes: ["id", "@default(autoincrement())"] },
+        { name: "username", type: "String", attributes: ["@unique"] },
+        { name: "password", type: "String" },
+        { name: "cart", type: "Product[]" },
+        { name: "orders", type: "Order[]" },
+        { name: "reviews", type: "Review[]" }
+      ]
+    },
+    {
+      name: "Category",
+      fields: [
+        { name: "id", type: "Int", attributes: ["id", "@default(autoincrement())"] },
+        { name: "name", type: "String", attributes: ["@unique"] },
+        { name: "products", type: "Product[]" }
+      ]
+    },
+    {
+      name: "Product",
+      fields: [
+        { name: "id", type: "Int", attributes: ["id", "@default(autoincrement())"] },
+        { name: "name", type: "String", attributes: ["@unique"] },
+        { name: "description", type: "String" },
+        { name: "price", type: "Float" },
+        { name: "categoryId", type: "Int" },
+        { name: "stock", type: "Int" },
+        { name: "reviews", type: "Review[]" },
+        { name: "category", type: "Category", attributes: ["@relation(fields: [categoryId], references: [id])"] },
+        { name: "User", type: "User?", attributes: ["@relation(fields: [userId], references: [id])"] },
+        { name: "userId", type: "Int?" },
+        { name: "Order", type: "Order?", attributes: ["@relation(fields: [orderId], references: [id])"] },
+        { name: "orderId", type: "Int?" }
+      ]
+    },
+    {
+      name: "Order",
+      fields: [
+        { name: "id", type: "Int", attributes: ["id", "@default(autoincrement())"] },
+        { name: "userId", type: "Int" },
+        { name: "status", type: "String" },
+        { name: "products", type: "Product[]" },
+        { name: "shipments", type: "Shipment[]" },
+        { name: "user", type: "User", attributes: ["@relation(fields: [userId], references: [id])"] }
+      ]
+    },
+    {
+      name: "Shipment",
+      fields: [
+        { name: "id", type: "Int", attributes: ["id", "@default(autoincrement())"] },
+        { name: "orderId", type: "Int" },
+        { name: "status", type: "String" },
+        { name: "order", type: "Order", attributes: ["@relation(fields: [orderId], references: [id])"] }
+      ]
+    },
+    {
+      name: "Review",
+      fields: [
+        { name: "id", type: "Int", attributes: ["id", "@default(autoincrement())"] },
+        { name: "userId", type: "Int" },
+        { name: "productId", type: "Int" },
+        { name: "rating", type: "Int" },
+        { name: "reviewText", type: "String" },
+        { name: "product", type: "Product", attributes: ["@relation(fields: [productId], references: [id])"] },
+        { name: "user", type: "User", attributes: ["@relation(fields: [userId], references: [id])"] }
+      ]
+    }
+  ],
+  actions: [
+    {
+      name: "addToCart",
+      fn: "import { addToCart } from \"@server/actions.js\"",
+      entities: ["User", "Product"]
+    },
+    {
+      name: "checkout",
+      fn: "import { checkout } from \"@server/actions.js\"",
+      entities: ["User", "Product", "Order"]
+    },
+    {
+      name: "cancelOrder",
+      fn: "import { cancelOrder } from \"@server/actions.js\"",
+      entities: ["Order"]
+    },
+    {
+      name: "createReview",
+      fn: "import { createReview } from \"@server/actions.js\"",
+      entities: ["User", "Product", "Review"]
+    }
+  ],
+  queries: [
+    {
+      name: "getProducts",
+      fn: "import { getProducts } from \"@server/queries.js\"",
+      entities: ["Product", "Category"]
+    },
+    {
+      name: "getProduct",
+      fn: "import { getProduct } from \"@server/queries.js\"",
+      entities: ["Product"]
+    },
+    {
+      name: "getOrders",
+      fn: "import { getOrders } from \"@server/queries.js\"",
+      entities: ["User", "Order"]
+    },
+    {
+      name: "getOrder",
+      fn: "import { getOrder } from \"@server/queries.js\"",
+      entities: ["User", "Order"]
+    },
+    {
+      name: "getShipment",
+      fn: "import { getShipment } from \"@server/queries.js\"",
+      entities: ["Shipment"]
+    },
+    {
+      name: "getReviews",
+      fn: "import { getReviews } from \"@server/queries.js\"",
+      entities: ["Product", "Review"]
+    }
+  ],
+  routes: [
+    { path: "/", to: HomePage },
+    { path: "/category/:id", to: CategoryPage },
+    { path: "/product/:id", to: ProductPage },
+    { path: "/cart", to: CartPage },
+    { path: "/order-confirm/:id", to: OrderConfirmationPage },
+    { path: "/track-order/:id", to: OrderTrackingPage },
+    { path: "/orders", to: OrdersPage },
+    { path: "/cancel-return/:id", to: CancelReturnPage }
+  ],
+  pages: [
+    { component: import { Home } from "@client/pages/Home.jsx", route: HomePage, authRequired: false },
+    { component: import { Category } from "@client/pages/Category.jsx", route: CategoryPage, authRequired: false },
+    { component: import { Product } from "@client/pages/Product.jsx", route: ProductPage, authRequired: false },
+    { component: import { Cart } from "@client/pages/Cart.jsx", route: CartPage, authRequired: true },
+    { component: import { OrderConfirmation } from "@client/pages/OrderConfirmation.jsx", route: OrderConfirmationPage, authRequired: true },
+    { component: import { OrderTracking } from "@client/pages/OrderTracking.jsx", route: OrderTrackingPage, authRequired: false },
+    { component: import { Orders } from "@client/Orders.jsx", route: OrdersPage, authRequired: true },
+    { component: import { CancelReturn } from "@client/pages/CancelReturn.jsx", route: CancelReturnPage, authRequired: true }
+  ]
+}
